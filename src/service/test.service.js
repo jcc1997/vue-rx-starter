@@ -2,7 +2,8 @@ import { from } from 'rxjs'
 import { Request } from './request.service'
 
 export class TestService extends Request {
-  test () {
+  test (val) {
+    console.log('service:' + val)
     return from(
       new Promise(resolve => {
         setTimeout(() => {

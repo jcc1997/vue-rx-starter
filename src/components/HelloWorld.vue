@@ -9,7 +9,10 @@
       >.
     </p>
     <h3>Installed CLI Plugins</h3>
-    <div>{{ count }}<button v-stream:click="plus$">+</button>{{ test }}</div>
+    <div>
+      {{ count }}<button v-stream:click="plus$">+</button
+      ><button v-stream:click="minus$">-</button>{{ hundred }}
+    </div>
     <ul>
       <li>
         <a
@@ -88,9 +91,9 @@
 </template>
 
 <script>
-// import { Observable } from 'rxjs'
-import { map, startWith, scan } from 'rxjs/operators'
+import { map, startWith, scan, concatMap } from 'rxjs/operators'
 import { TestService } from '../service/test.service'
+import { merge } from 'rxjs'
 
 const testService = new TestService()
 
@@ -99,15 +102,24 @@ export default {
   props: {
     msg: String
   },
-  domStreams: ['plus$'],
+  domStreams: ['plus$', 'minus$'],
   subscriptions() {
+    const operation$ = merge(
+      this.plus$.pipe(map(() => 1)),
+      this.minus$.pipe(map(() => -1))
+    )
+    operation$.subscribe(v => console.log(v))
+
     return {
-      count: this.plus$.pipe(
-        map(() => 1),
+      count: operation$.pipe(
         startWith(0),
         scan((total, change) => total + change)
       ),
-      test: testService.test()
+      hundred: operation$.pipe(
+        concatMap(val => testService.test().pipe(map(v => v * val))),
+        startWith(0),
+        scan((total, change) => total + change)
+      )
     }
   }
 }
